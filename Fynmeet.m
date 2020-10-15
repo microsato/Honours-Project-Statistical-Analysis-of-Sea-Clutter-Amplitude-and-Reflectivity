@@ -27,9 +27,9 @@ global modChiSqr_k_mom
 global modChiSqr_k_r
 %% Load Dataset
 %load('TFC15_008');         % loads a variables Cdata, Info, NumOfPRIs, NumOfRangeBins, PCI, PRI_s, Waveform, lamda  
-DataSetName = 'CFA17_001';
+% DataSetName = 'CFA17_001';
 %DataSetName = 'CFA17_002';
-%DataSetName = 'CFA17_003';
+DataSetName = 'CFA17_001';
 load(DataSetName);
 DataSet = DataSetName(7:9);
 %% Range Bin
@@ -48,6 +48,8 @@ elseif DataSet =='002'
 else 
      GrazingAngle =(0.323+0.35)/2;
 end 
+
+
 %% Plot Cdata 
 PRI = PRI_s; % TFC15_008
 VRange_m = (1:1:size(Cdata,2)); 
@@ -60,12 +62,20 @@ ts = 1/fs;
 NumRangeLines = size(Cdata,1);
 StartRangeLine = round(NumRangeLines/2); 
 StopRangeLine = round(NumRangeLines/4*3);
+% X = Cdata(StartRangeLine:StopRangeLine,RangeBin);
+
+% DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
+% DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
+% data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
+%% Main
+
+for RangeBin = 1:1:size(Cdata,2)
+
 X = Cdata(StartRangeLine:StopRangeLine,RangeBin);
 
 DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
 DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
 data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
-%% Main
 % Plot histogram
 sizeData = length(data);
 data = sort(data,'ascend');
@@ -170,14 +180,40 @@ end
     modChiSqr_k_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
     modChiSqr_k_r= round(sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K)));
     
-fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
+%fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
+i = RangeBin;
+arr_modChiSqr_rayl_mle(i) = modChiSqr_rayl_mle;
+arr_modChiSqr_rayl_mom(i)= modChiSqr_rayl_mom;
+arr_modChiSqr_logn_mle(i)=modChiSqr_logn_mle;
+arr_modChiSqr_logn_mom(i) = modChiSqr_logn_mom;
+arr_modChiSqr_wbl_mle(i)= modChiSqr_wbl_mle;
+arr_modChiSqr_wbl_mom(i)=modChiSqr_wbl_mom;
+arr_modChiSqr_k_watts(i)=modChiSqr_k_watts;
+arr_modChiSqr_k_mom(i)=modChiSqr_k_mom;
+arr_modChiSqr_k_r(i)=modChiSqr_k_r;
+end 
+%% Average Test over Dataset
+av_modChiSqr_rayl_mle = mean(arr_modChiSqr_rayl_mle);
+av_modChiSqr_rayl_mom=mean(arr_modChiSqr_rayl_mom);
+av_modChiSqr_logn_mle=mean(arr_modChiSqr_logn_mle);
+av_modChiSqr_logn_mom=mean(arr_modChiSqr_logn_mom);
+av_modChiSqr_wbl_mle=mean(arr_modChiSqr_wbl_mle);
+av_modChiSqr_wbl_mom=mean(arr_modChiSqr_wbl_mom);
+av_modChiSqr_k_watts=mean(arr_modChiSqr_k_watts);
+av_modChiSqr_k_mom=mean(arr_modChiSqr_k_mom);
+av_modChiSqr_k_r=mean(arr_modChiSqr_k_r);
+
+fprintf('\nAverage Modified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',av_modChiSqr_rayl_mle, av_modChiSqr_rayl_mom,av_modChiSqr_logn_mle, av_modChiSqr_logn_mom,av_modChiSqr_wbl_mle, av_modChiSqr_wbl_mom,av_modChiSqr_k_watts, av_modChiSqr_k_mom, av_modChiSqr_k_r);
 %% Call to Plot 
-plotAll();      %plots all distributions 
-plotRay();      %plots Rayleigh MLE and MoM
-plotLogn();     %plots Lognormal MLE and MoM
-plotWbl();      %plots Weibull MLE and MoM
-plotK();        %plots K-Dsitribution MLE and MoM
-plotBest;       %plots the best fit of each dsitribution
+% plotAll();      %plots all distributions 
+% plotRay();      %plots Rayleigh MLE and MoM
+% plotLogn();     %plots Lognormal MLE and MoM
+% plotWbl();      %plots Weibull MLE and MoM
+% plotK();        %plots K-Dsitribution MLE and MoM
+% plotBest;       %plots the best fit of each dsitribution
+% close all;
+% figure()
+
 %% Plotting + Saving Figures
 function plotAll()
 % Plot histogram
@@ -514,7 +550,7 @@ function [p_mle,p_mom,shape_mle,shape_mom,scale_mle,scale_mom] = wblPDF(data)
 end
 function [p_watts,p_mom,p_r,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,scale_r] = kPDF(data)
     N = numel(data);
-    
+    global RangeBin 
     %Watts's Method: Get shape and scale estimate using 2nd and 4th moments
     m2 = (1/N)*sum(data.^2); %second sample moment
     m4 = (1/N)*sum(data.^4); %fourth sample moment
@@ -525,11 +561,14 @@ function [p_watts,p_mom,p_r,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,
     %MoM: Get shape and scale estimate using 1st and 2nd moments
     m1 = mean(data);        %first sample moment
     m2 = mean(data.^2);     %second sample moment
-    
-    fun = @(v)(4.*v.*gamma(v).^2)./(pi.*gamma(v+0.5).^2) -m2./(m1.^2);
-    shape_mom= fzero(fun,shape_watts);
-    scale_mom = gamma(shape_mom+0.5)*sqrt(pi)/(gamma(shape_mom)*m1);
-    
+    if (RangeBin == 18) || (RangeBin == 19)|| (RangeBin == 21)|| (RangeBin == 48)
+        shape_mom = shape_watts;
+        scale_mom = scale_watts;
+    else 
+        fun = @(v)(4.*v.*gamma(v).^2)./(pi.*gamma(v+0.5).^2) -m2./(m1.^2);
+        shape_mom= fzero(fun,shape_watts);
+        scale_mom = gamma(shape_mom+0.5)*sqrt(pi)/(gamma(shape_mom)*m1);
+    end 
     %Raghavan's Method
     shape_r = rag(data);
     scale_r = (2/mean(data))*(gamma(shape_r+0.5)*gamma(1.5))/(gamma(shape_r));
