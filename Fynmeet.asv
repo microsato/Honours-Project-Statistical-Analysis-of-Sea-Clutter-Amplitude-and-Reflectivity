@@ -27,9 +27,9 @@ global modChiSqr_k_mom
 global modChiSqr_k_r
 %% Load Dataset
 %load('TFC15_008');         % loads a variables Cdata, Info, NumOfPRIs, NumOfRangeBins, PCI, PRI_s, Waveform, lamda  
-DataSetName = 'CFA17_001';
-%DataSetName = 'CFA17_002';
-%DataSetName = 'CFA17_003';
+%DataSet = 'CFA17_001';
+DataSetName = 'CFA17_002';
+%DataSet = 'CFA17_003';
 load(DataSetName);
 DataSet = DataSetName(7:9);
 %% Range Bin
@@ -42,12 +42,7 @@ lambda=c/(9*(10^9));                         % Wavelength of the radar
 Bandwidth_Hz = 10e6;                         % Pulsewidth = 100us, pure sinusoid at 9GHz
 RangeResolution_m = c/(2*Bandwidth_Hz);      % Range resolution in meters 
 if DataSet == '001'
-    GrazingAngle = (1.02+1.27)/2;
-elseif DataSet =='002'
-     GrazingAngle = (0.472+0.525)/2;
-else 
-     GrazingAngle =(0.323+0.35)/2;
-end 
+    
 %% Plot Cdata 
 PRI = PRI_s; % TFC15_008
 VRange_m = (1:1:size(Cdata,2)); 
@@ -166,11 +161,11 @@ end
     fi_r(end)=[];
     
     %Using Formula in (Chan 2006):
-    modChiSqr_k_watts= round(sum((fi_watts-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_k_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_k_r= round(sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_k_watts= sum((fi_watts-(PFA)*N/K).^2/((PFA)*N/K));
+    modChiSqr_k_mom= sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K));
+    modChiSqr_k_r= sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K));
     
-fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
+fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %f \nRayleigh MoM: %f\nLognormal MLE: %f \nLognormal MoM: %f \nWeibull MLE: %f \nWeibull MoM: %f \nK Watts: %f \nK MoM: %f \nK Rag: %f \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
 %% Call to Plot 
 plotAll();      %plots all distributions 
 plotRay();      %plots Rayleigh MLE and MoM
@@ -231,8 +226,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','Rayleigh MLE','Rayleigh MoM','Lognormal MLE','Lognormal MoM','Weibull MLE','Weibull MoM','K-Distribution Watts','K-Distribution MoM','K-Distribution Raghavan','Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %f.3',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_All',DataSet,RangeBin);
 saveas(figure(1),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -264,8 +258,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','Rayleigh MLE','Rayleigh MoM','Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %.3f',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_Rayl',DataSet,RangeBin);
 saveas(figure(2),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -298,8 +291,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','Lognormal MLE','Lognormal MoM','Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %.3f',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_LogN',DataSet,RangeBin);
 saveas(figure(3),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -332,8 +324,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','Weibull MLE','Weibull MoM','Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %.3f',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_Wbl',DataSet,RangeBin);
 saveas(figure(4),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -369,8 +360,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','K-Distribution Watts','K-Distribution MoM','K-Distribution Raghavan','Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %.3f',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_K',DataSet,RangeBin);
 saveas(figure(5),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -456,8 +446,7 @@ ylim([0.000001 10])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data',l1,l2,l3,l4,'Location','southwest');
-t1 = sprintf('Range Bin: %i  Grazing Angle: %.3f',RangeBin, GrazingAngle);
-title(t1);
+title('Range Bin: %i  Grazing Angle: %d',RangeBin, GrazingAngle);
 baseFileName = sprintf('%s_%i_Best',DataSet,RangeBin);
 saveas(figure(6),fullfile(path,[baseFileName '.jpeg']));
 end 
@@ -564,8 +553,8 @@ function [modChiSqr_mle, modChiSqr_mom]=modChiSqr_rayl(K,PFA,data,sigma_mle,sigm
     fi_mom(end)=[];
      
     %Using Formula in (Chan):
-    modChiSqr_mle= round(sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_mle= sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K));
+    modChiSqr_mom= sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K));
     %NOrmal Chi Sqr
 
  
@@ -591,8 +580,8 @@ function [modChiSqr_mle, modChiSqr_mom]=modChiSqr_logn(K,PFA,data,sigma_mle,sigm
     fi_mom(end)=[];
     
     %Using Formula in (Chan):
-    modChiSqr_mle= round(sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_mle= sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K));
+    modChiSqr_mom= sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K));
     
    
 
@@ -618,8 +607,8 @@ function [modChiSqr_mle, modChiSqr_mom]=modChiSqr_wbl(K,PFA,data,shape_mle,shape
     fi_mom(end)=[];
     
     %Using Formula in (Chan):
-    modChiSqr_mle= round(sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_mle= sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K));
+    modChiSqr_mom= sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K));
 
 end 
 function [modChiSqr_watts, modChiSqr_mom, modChiSqr_r]=modChiSqr_k(K,PFA,data,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,scale_r)
