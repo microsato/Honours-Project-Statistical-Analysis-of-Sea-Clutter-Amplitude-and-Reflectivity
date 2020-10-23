@@ -2,8 +2,12 @@ clear all;
 close all;
 %% Global Variables
 for i=1:1
+global Cdata
 global path
 global RangeBin
+global R1 
+global R2
+global RB
 global R
 global f
 global A
@@ -17,7 +21,6 @@ global azimuth
 global theta_w
 global swh
 global wndspd
-global data 
 global x 
 global p_mle_rayl
 global p_mom_rayl
@@ -39,14 +42,9 @@ global modChiSqr_k_mom
 global modChiSqr_k_r
 end
 %% Load Dataset
-% loads a variables Cdata, Info, NumOfPRIs, NumOfRangeBins, PCI, PRI_s, Waveform, lamda  
-% Choose between CFA17_001, CFA17_002, CFA17_003, CFC17_001 , CFC14_004 ,
-% CFC16_001
-DataSetName = '11_011_CS';
+DataSetName = 'CFA17_002';
 load(DataSetName);
 DataSet = DataSetName(7:9);
-%% Range Bin
-RangeBin = 1;               % Specify range bin to process 
 %% Path for Figures
 path='C:\Users\micro\.QtWebEngineProcess\Desktop\EEE4022S\Figures';
 %% Radar parameters
@@ -68,6 +66,7 @@ for setParameters = 1:1
         R = PCI.Range;
         theta_w = 253.4 -ant_az;
         lambda = c/(f*10^9);
+        A = 15*R*(azimuth*pi/180)*sec(GrazingAngle*pi/180);
     elseif DataSetName =='CFA17_002'
         pol = 'VV';
         f = 6.9;
@@ -81,7 +80,8 @@ for setParameters = 1:1
         elevation = -1.225; %degrees
         R = PCI.Range;
         theta_w = 253.4 -ant_az;
-         lambda = c/(f*10^9);
+        lambda = c/(f*10^9);
+        A = 15*R*(azimuth*pi/180)*sec(GrazingAngle*pi/180);
     elseif DataSetName == 'CFA17_003'
         pol = 'VV';
         f = 6.9;
@@ -94,7 +94,8 @@ for setParameters = 1:1
         ant_az = 180.7;
         elevation = -1.219; %degrees
         R = PCI.Range;
-         lambda = c/(f*10^9);
+        lambda = c/(f*10^9);
+        A = 15*R*(azimuth*pi/180)*sec(GrazingAngle*pi/180);
     elseif DataSetName == 'CFC17_001'
         pol = 'VV';
         f = 9;
@@ -107,7 +108,8 @@ for setParameters = 1:1
         ant_az = 165.5;
         elevation = -1.06; %degrees
         R = PCI.Range;  
-         lambda = c/(f*10^9);
+        lambda = c/(f*10^9);
+        A = 15*R*(azimuth*pi/180)*sec(GrazingAngle*pi/180);
     elseif DataSetName == '08_017_CS'
         pol = 'VV';
         f = 8.8;  
@@ -161,7 +163,7 @@ for setParameters = 1:1
         azimuth = 1.8;
         ant_az = 307.5;
         elevation = -0.569; %degrees
-        R = PCI.RangeS;   
+        R = PCI.Range;   
         A = 15*R*(azimuth*pi/180)*sec(GrazingAngle*pi/180);
         lambda = c/(f*10^9);
      elseif DataSetName == '08_021_CS'
@@ -250,186 +252,144 @@ PRI = PRI_s; % TFC15_008
 VRange_m = (1:1:size(Cdata,2)); 
 VRangeBins = 1:1:size(Cdata,2);
 TimeVector = (1:1:size(Cdata,1))*PRI;
-%% Extract one range bin 
 
-fs = 1/PRI;
-ts = 1/fs;
-NumRangeLines = size(Cdata,1);
-StartRangeLine = round(NumRangeLines/2); 
-StopRangeLine = round(NumRangeLines/4*3);
-X = Cdata(StartRangeLine:StopRangeLine,RangeBin);
-
-% DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
-% DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
-% data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
+%% Range Bin
+R1 = 40;
+R2 = 48;
 %% Reflectivity 
-
-reflectivityCompare(Cdata);
-%% Main - Amplitude Stats
-
-%for RangeBin = 1:1:size(Cdata,2)
-
-X = Cdata(StartRangeLine:StopRangeLine,RangeBin);
-
-DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
-DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
-data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
-% Plot histogram
-sizeData = length(data);
-data = sort(data,'ascend');
-x = 0:0.0001:max(data)+0.5;
-%Rayleigh
-[p_mle_rayl,p_mom_rayl,sigma_mle_rayl,sigma_mom_rayl] = rayleighPDF(data);
-[modChiSqr_rayl_mle, modChiSqr_rayl_mom] = modChiSqr_rayl(10,0.1,data,sigma_mle_rayl,sigma_mom_rayl); 
-% Lognormal Distribution
-[p_mle_logn,p_mom_logn,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn] = lognPDF(data);
-[modChiSqr_logn_mle, modChiSqr_logn_mom] = modChiSqr_logn(10,0.1,data,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn); 
-% Weibull Distribution 
-[p_mle_wbl,p_mom_wbl,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl] = wblPDF(data);
-[modChiSqr_wbl_mle, modChiSqr_wbl_mom] = modChiSqr_wbl(10,0.1,data,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl); 
-% K = 10;
-% PFA = 0.1;
-% N=length(data);       %get length of sea clutter data
-%     CDF_start=      1-PFA;   %Start at this probability in the CDF function (translates to PFA in PDF) 
-%     stepSize =      PFA/K;
-%     probability_intervals=  CDF_start:stepSize:1; 
-%     %intervals_CDF=  0:0.1:1; 
-%     x1 = 0:1e-4:data(N); %Get cdf of k distribution over the desired range
-%     wbl_cdf_mle = 1 - exp(-(x1./scale_mle_wbl).^shape_mle_wbl);
-%     wbl_cdf_mom = 1 - exp(-(x1./scale_mom_wbl).^shape_mom_wbl);
-% for i=1:length(probability_intervals)
-%         % find the index (b) of the value in the cdf that is associated
-%         % with the probabilites stipulated by K --> then find the x value
-%         % associated with this index
-%         [a,b]=min(abs(wbl_cdf_mle-probability_intervals(i)));
-%         xvals_invCDF_mle_wbl(i)=x1(b);
-%         
-%         [a,b]=min(abs(wbl_cdf_mom-probability_intervals(i)));
-%         xvals_invCDF_mom_wbl(i)=x1(b);
-% 
-% end
-%     % Since the x value associated with 100% of the cdf tends to infinity --> we couldn't however plot the cdf over infinite range 
-%     %this value is the value at the end of the STATISTICAL MODEL of the cdf
-%     %not the data!!
-%     xvals_invCDF_mle_wbl(end)=Inf; 
-%     xvals_invCDF_mom_wbl(end)=Inf;
-% 
-%     
-%     %count how many x values are in these intervals for the actual data 
-%     fi_mle_wbl= histc(data,xvals_invCDF_mle_wbl);
-%     fi_mom_wbl= histc(data,xvals_invCDF_mom_wbl);
-% 
-%     fi_mle_wbl(end)=[];
-%     fi_mom_wbl(end)=[];
-%   
-%     %Using Formula in (Chan):
-%     global modChiSqr_wbl_mle
-%     global modChiSqr_wbl_mom
-%     modChiSqr_wbl_mle= sum((fi_mle_wbl-(PFA)*N/K).^2/((PFA)*N/K));
-%     modChiSqr_wbl_mom= sum((fi_mom_wbl-(PFA)*N/K).^2/((PFA)*N/K));
-   
-%% K-Dsitribution
-[p_watts_k,p_mom_k,p_r_k,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k] = kPDF(data);
-
-%[modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r] = modChiSqr_k(10,0.1,data,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k);
-K = 10;
-PFA = 0.1;
-N=length(data);       %get length of sea clutter data
-    CDF_start=      1-PFA;   %Start at this probability in the CDF function (translates to PFA in PDF) 
-    stepSize =      PFA/K;
-    probability_intervals=  CDF_start:stepSize:1; 
-    %intervals_CDF=  0:0.1:1; 
-    x1 = 0:1e-4:data(N); %Get cdf of k distribution over the desired range
-    k_cdf_watts= 1 - ((2/gamma(shape_watts_k))*((scale_watts_k.*x1./2).^shape_watts_k).*besselk(shape_watts_k,scale_watts_k.*x1)); %You dont need to change this
-    k_cdf_mom= 1 - ((2/gamma(shape_mom_k))*((scale_mom_k.*x1./2).^shape_mom_k).*besselk(shape_mom_k,scale_mom_k.*x1)); %You dont need to change this
-    k_cdf_r= 1 - ((2/gamma(shape_r_k))*((scale_r_k.*x1./2).^shape_r_k).*besselk(shape_r_k,scale_r_k.*x1)); %You dont need to change this
-    
- for i=1:length(probability_intervals)
-        % find the index (b) of the value in the cdf that is associated
-        % with the probabilites stipulated by K --> then find the x value
-        % associated with this index
-        [a,b]=min(abs(k_cdf_watts-probability_intervals(i)));
-        xvals_invCDF_watts(i)=x1(b);
-        
-        [a,b]=min(abs(k_cdf_mom-probability_intervals(i)));
-        xvals_invCDF_mom(i)=x1(b);
-        
-        [a,b]=min(abs(k_cdf_r-probability_intervals(i)));
-        xvals_invCDF_r(i)=x1(b);
-end
-    % Since the x value associated with 100% of the cdf tends to infinity --> we couldn't however plot the cdf over infinite range 
-    %this value is the value at the end of the STATISTICAL MODEL of the cdf
-    %not the data!!
-    xvals_invCDF_watts(end)=Inf; 
-    xvals_invCDF_mom(end)=Inf;
-    xvals_invCDF_r(end)=Inf;
-    
-    %count how many x values are in these intervals for the actual data 
-    fi_watts= histc(data,xvals_invCDF_watts);
-    fi_mom= histc(data,xvals_invCDF_mom);
-    fi_r= histc(data,xvals_invCDF_r);
-    
-    fi_watts(end)=[];
-    fi_mom(end)=[];
-    fi_r(end)=[];
-    
-    %Using Formula in (Chan 2006):
-    modChiSqr_k_watts= round(sum((fi_watts-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_k_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
-    modChiSqr_k_r= round(sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K)));
-    
-%fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
-i = RangeBin;
-arr_modChiSqr_rayl_mle(i) = modChiSqr_rayl_mle;
-arr_modChiSqr_rayl_mom(i)= modChiSqr_rayl_mom;
-arr_modChiSqr_logn_mle(i)=modChiSqr_logn_mle;
-arr_modChiSqr_logn_mom(i) = modChiSqr_logn_mom;
-arr_modChiSqr_wbl_mle(i)= modChiSqr_wbl_mle;
-arr_modChiSqr_wbl_mom(i)=modChiSqr_wbl_mom;
-arr_modChiSqr_k_watts(i)=modChiSqr_k_watts;
-arr_modChiSqr_k_mom(i)=modChiSqr_k_mom;
-arr_modChiSqr_k_r(i)=modChiSqr_k_r;
-
-%% Call to Plot 
-% plotAll();      %plots all distributions 
-% plotRay();      %plots Rayleigh MLE and MoM
-% plotLogn();     %plots Lognormal MLE and MoM
-% plotWbl();      %plots Weibull MLE and MoM
-% plotK();        %plots K-Dsitribution MLE and MoM
-% plotBest();       %plots the best fit of each dsitribution
-% %close all;
-% figure()
-%end
-%% Average Test over Dataset
-av_modChiSqr_rayl_mle = mean(arr_modChiSqr_rayl_mle);
-av_modChiSqr_rayl_mom=mean(arr_modChiSqr_rayl_mom);
-av_modChiSqr_logn_mle=mean(arr_modChiSqr_logn_mle);
-av_modChiSqr_logn_mom=mean(arr_modChiSqr_logn_mom);
-av_modChiSqr_wbl_mle=mean(arr_modChiSqr_wbl_mle);
-av_modChiSqr_wbl_mom=mean(arr_modChiSqr_wbl_mom);
-av_modChiSqr_k_watts=mean(arr_modChiSqr_k_watts);
-av_modChiSqr_k_mom=mean(arr_modChiSqr_k_mom);
-av_modChiSqr_k_r=mean(arr_modChiSqr_k_r);
-
-fprintf('\nAverage Modified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',av_modChiSqr_rayl_mle, av_modChiSqr_rayl_mom,av_modChiSqr_logn_mle, av_modChiSqr_logn_mom,av_modChiSqr_wbl_mle, av_modChiSqr_wbl_mom,av_modChiSqr_k_watts, av_modChiSqr_k_mom, av_modChiSqr_k_r);
-%% Call to Plot 
-% plotAll();      %plots all distributions 
-% plotRay();      %plots Rayleigh MLE and MoM
-% plotLogn();     %plots Lognormal MLE and MoM
-% plotWbl();      %plots Weibull MLE and MoM
-% plotK();        %plots K-Dsitribution MLE and MoM
-% plotBest;       %plots the best fit of each dsitribution
-% close all;
-% figure()
-
+loopRangeBins(R1,R2);
+%loopDataset();
+%% Amplitude Stats
 %% Plotting + Saving Figures
-function plotAll()
+function loopRangeBins(R1,R2)
+    global RB
+    RB = R1;
+    for i=1:1
+        global x 
+        global p_mle_rayl
+        global p_mom_rayl
+        global p_mle_logn
+        global p_mom_logn
+        global p_mle_wbl
+        global p_mom_wbl
+        global p_watts_k
+        global p_mom_k
+        global p_r_k
+        global modChiSqr_rayl_mle
+        global modChiSqr_rayl_mom
+        global modChiSqr_logn_mle
+        global modChiSqr_logn_mom
+        global modChiSqr_wbl_mle
+        global modChiSqr_wbl_mom
+        global modChiSqr_k_watts
+        global modChiSqr_k_mom
+        global modChiSqr_k_r
+    end
+    data = concatRangeBins(R1,R2);
+    
+    x = 0:0.0001:max(data);
+    %Fit distributions 
+    %Rayleigh
+    [p_mle_rayl,p_mom_rayl,sigma_mle_rayl,sigma_mom_rayl] = rayleighPDF(data);
+    [modChiSqr_rayl_mle, modChiSqr_rayl_mom] = modChiSqr_rayl(10,0.1,data,sigma_mle_rayl,sigma_mom_rayl);
+    % Lognormal Distribution
+    [p_mle_logn,p_mom_logn,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn] = lognPDF(data);
+    [modChiSqr_logn_mle, modChiSqr_logn_mom] = modChiSqr_logn(10,0.1,data,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn);
+    % Weibull Distribution
+    [p_mle_wbl,p_mom_wbl,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl] = wblPDF(data);
+    [modChiSqr_wbl_mle, modChiSqr_wbl_mom] = modChiSqr_wbl(10,0.1,data,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl);
+    % K-Distribution
+    [p_watts_k,p_mom_k,p_r_k,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k] = kPDF(data);
+    [modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r] = modChiSqr_k(10,0.1,data,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k);
+    
+    plotAll(data);      %plots all distributions
+    plotRay(data);      %plots Rayleigh MLE and MoM
+    plotLogn(data);     %plots Lognormal MLE and MoM
+    plotWbl(data);      %plots Weibull MLE and MoM
+    plotK(data);        %plots K-Dsitribution MLE and MoM
+    plotBest(data);       %plots the best fit of each dsitribution
+    % %close all;
+    fprintf('\nModified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',modChiSqr_rayl_mle, modChiSqr_rayl_mom,modChiSqr_logn_mle, modChiSqr_logn_mom,modChiSqr_wbl_mle, modChiSqr_wbl_mom,modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r);
+    reflectivityCompare(0);
+end
+function loopDataset()
+    global RB 
+    global Cdata
+    for RB = 1:1:size(Cdata,2) %For every RB in dataset 
+        DataOneBin = Cdata(:,RB); %Extract the data from the specified bin only 
+        DataMeanSubtracted = DataOneBin - mean(DataOneBin);
+        data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
+        sizeData = length(data);
+        data = sort(data,'ascend');
+        x = 0:0.0001:max(data);
+        %Fit distributions per range bin 
+        %Rayleigh
+        [p_mle_rayl,p_mom_rayl,sigma_mle_rayl,sigma_mom_rayl] = rayleighPDF(data);
+        [modChiSqr_rayl_mle, modChiSqr_rayl_mom] = modChiSqr_rayl(10,0.1,data,sigma_mle_rayl,sigma_mom_rayl);
+        % Lognormal Distribution
+        [p_mle_logn,p_mom_logn,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn] = lognPDF(data);
+        [modChiSqr_logn_mle, modChiSqr_logn_mom] = modChiSqr_logn(10,0.1,data,sigma_mle_logn,sigma_mom_logn,mu_mle_logn,mu_mom_logn);
+        % Weibull Distribution
+        [p_mle_wbl,p_mom_wbl,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl] = wblPDF(data);
+        [modChiSqr_wbl_mle, modChiSqr_wbl_mom] = modChiSqr_wbl(10,0.1,data,shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl);
+        % K-Distribution
+        [p_watts_k,p_mom_k,p_r_k,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k] = kPDF(data);
+        [modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r] = modChiSqr_k(10,0.1,data,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k);
+        
+        %Populate an array of the modified chi squared results for each
+        %Range bin 
+        arr_modChiSqr_rayl_mle(RB) = modChiSqr_rayl_mle;
+        arr_modChiSqr_rayl_mom(RB)= modChiSqr_rayl_mom;
+        arr_modChiSqr_logn_mle(RB)=modChiSqr_logn_mle;
+        arr_modChiSqr_logn_mom(RB) = modChiSqr_logn_mom;
+        arr_modChiSqr_wbl_mle(RB)= modChiSqr_wbl_mle;
+        arr_modChiSqr_wbl_mom(RB)=modChiSqr_wbl_mom;
+        arr_modChiSqr_k_watts(RB)=modChiSqr_k_watts;
+        arr_modChiSqr_k_mom(RB)=modChiSqr_k_mom;
+        arr_modChiSqr_k_r(RB)=modChiSqr_k_r;
+        
+        % plotAll(data);      %plots all distributions 
+        % plotRay(data);      %plots Rayleigh MLE and MoM
+        % plotLogn(data);     %plots Lognormal MLE and MoM
+        % plotWbl(data);      %plots Weibull MLE and MoM
+        % plotK(data);        %plots K-Dsitribution MLE and MoM
+        % plotBest(data);       %plots the best fit of each dsitribution
+        % %close all;
+        % figure()
+    end
+    % Average Test over Dataset
+    av_modChiSqr_rayl_mle = round(mean(arr_modChiSqr_rayl_mle));
+    av_modChiSqr_rayl_mom=round(mean(arr_modChiSqr_rayl_mom));
+    av_modChiSqr_logn_mle=round(mean(arr_modChiSqr_logn_mle));
+    av_modChiSqr_logn_mom=round(mean(arr_modChiSqr_logn_mom));
+    av_modChiSqr_wbl_mle=round(mean(arr_modChiSqr_wbl_mle));
+    av_modChiSqr_wbl_mom=round(mean(arr_modChiSqr_wbl_mom));
+    av_modChiSqr_k_watts=round(mean(arr_modChiSqr_k_watts));
+    av_modChiSqr_k_mom=round(mean(arr_modChiSqr_k_mom));
+    av_modChiSqr_k_r=round(mean(arr_modChiSqr_k_r));
+    
+    fprintf('\nAverage Modified Chi-Squared Test: \nRayleigh MLE: %i \nRayleigh MoM: %i\nLognormal MLE: %i \nLognormal MoM: %i \nWeibull MLE: %i \nWeibull MoM: %i \nK Watts: %i \nK MoM: %i \nK Rag: %i \n',av_modChiSqr_rayl_mle, av_modChiSqr_rayl_mom,av_modChiSqr_logn_mle, av_modChiSqr_logn_mom,av_modChiSqr_wbl_mle, av_modChiSqr_wbl_mom,av_modChiSqr_k_watts, av_modChiSqr_k_mom, av_modChiSqr_k_r);
+    reflectivityCompare(1);
+end 
+function [concatdata] = concatRangeBins(R1,R2)
+    global Cdata
+    concatdata = [];
+    for i = R1:1:R2
+        %X = Cdata(StartRangeLine:StopRangeLine,RangeBin);
+        DataOneBin = Cdata(:,i); %Extract the data from the specified bin only 
+        DataMeanSubtracted = DataOneBin - mean(DataOneBin);
+        data = abs(DataMeanSubtracted)'; % amplitude of the complex clutter
+        concatdata = horzcat(concatdata,data);    
+    end
+    concatdata = sort(concatdata,'ascend');
+    x = 0:0.0001:max(concatdata);
+end
+function plotAll(data)
 % Plot histogram
 global path
 global RangeBin
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_mle_rayl
 global p_mom_rayl
@@ -471,7 +431,7 @@ hold on;
 plot(x,p_r_k,'Linewidth',1);
 %Plot
 xlim([0 5])
-ylim([0.000001 10])
+ylim([0.000001 5])
 xlabel('Normalised Amplitude');
 ylabel('Probability');
 legend('Data','Rayleigh MLE','Rayleigh MoM','Lognormal MLE','Lognormal MoM','Weibull MLE','Weibull MoM','K-Distribution Watts','K-Distribution MoM','K-Distribution Raghavan','Location','southwest');
@@ -480,12 +440,11 @@ title(t1);
 baseFileName = sprintf('%s_%i_All',DataSet,RangeBin);
 saveas(figure(1),fullfile(path,[baseFileName '.png']));
 end 
-function plotRay()
+function plotRay(data)
 global path
 global RangeBin 
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_mle_rayl
 global p_mom_rayl
@@ -513,13 +472,12 @@ title(t1);
 baseFileName = sprintf('%s_%i_Rayl',DataSet,RangeBin);
 saveas(figure(2),fullfile(path,[baseFileName '.png']));
 end 
-function plotLogn()
+function plotLogn(data)
 % Plot histogram
 global path
 global RangeBin 
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_mle_logn
 global p_mom_logn
@@ -547,13 +505,12 @@ title(t1);
 baseFileName = sprintf('%s_%i_LogN',DataSet,RangeBin);
 saveas(figure(3),fullfile(path,[baseFileName '.png']));
 end 
-function plotWbl()
+function plotWbl(data)
 % Plot histogram
 global path
 global RangeBin 
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_mle_wbl
 global p_mom_wbl
@@ -581,13 +538,12 @@ title(t1);
 baseFileName = sprintf('%s_%i_Wbl',DataSet,RangeBin);
 saveas(figure(4),fullfile(path,[baseFileName '.png']));
 end 
-function plotK()
+function plotK(data)
 % Plot histogram
 global path
 global RangeBin 
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_watts_k
 global p_mom_k
@@ -618,13 +574,12 @@ title(t1);
 baseFileName = sprintf('%s_%i_K',DataSet,RangeBin);
 saveas(figure(5),fullfile(path,[baseFileName '.png']));
 end 
-function plotBest()
+function plotBest(data)
 % Plot histogram
 global path
 global RangeBin 
 global GrazingAngle
 global DataSet
-global data 
 global x 
 global p_mle_rayl
 global p_mom_rayl
@@ -758,7 +713,7 @@ function [p_mle,p_mom,shape_mle,shape_mom,scale_mle,scale_mom] = wblPDF(data)
 end
 function [p_watts,p_mom,p_r,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,scale_r] = kPDF(data)
     N = numel(data);
-    global RangeBin 
+    global RB 
     %Watts's Method: Get shape and scale estimate using 2nd and 4th moments
     m2 = (1/N)*sum(data.^2); %second sample moment
     m4 = (1/N)*sum(data.^4); %fourth sample moment
@@ -769,7 +724,7 @@ function [p_watts,p_mom,p_r,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,
     %MoM: Get shape and scale estimate using 1st and 2nd moments
     m1 = mean(data);        %first sample moment
     m2 = mean(data.^2);     %second sample moment
-    if (RangeBin == 18) || (RangeBin == 19)|| (RangeBin == 21)|| (RangeBin == 48)
+    if (RB == 18) || (RB == 19)|| (RB == 21)|| (RB == 48)
         shape_mom = shape_watts;
         scale_mom = scale_watts;
     else 
@@ -868,44 +823,83 @@ function [modChiSqr_mle, modChiSqr_mom]=modChiSqr_wbl(K,PFA,data,shape_mle,shape
     modChiSqr_mle= round(sum((fi_mle-(PFA)*N/K).^2/((PFA)*N/K)));
     modChiSqr_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
 
+    % K = 10;
+% PFA = 0.1;
+% N=length(data);       %get length of sea clutter data
+%     CDF_start=      1-PFA;   %Start at this probability in the CDF function (translates to PFA in PDF) 
+%     stepSize =      PFA/K;
+%     probability_intervals=  CDF_start:stepSize:1; 
+%     %intervals_CDF=  0:0.1:1; 
+%     x1 = 0:1e-4:data(N); %Get cdf of k distribution over the desired range
+%     wbl_cdf_mle = 1 - exp(-(x1./scale_mle_wbl).^shape_mle_wbl);
+%     wbl_cdf_mom = 1 - exp(-(x1./scale_mom_wbl).^shape_mom_wbl);
+% for i=1:length(probability_intervals)
+%         % find the index (b) of the value in the cdf that is associated
+%         % with the probabilites stipulated by K --> then find the x value
+%         % associated with this index
+%         [a,b]=min(abs(wbl_cdf_mle-probability_intervals(i)));
+%         xvals_invCDF_mle_wbl(i)=x1(b);
+%         
+%         [a,b]=min(abs(wbl_cdf_mom-probability_intervals(i)));
+%         xvals_invCDF_mom_wbl(i)=x1(b);
+% 
+% end
+%     % Since the x value associated with 100% of the cdf tends to infinity --> we couldn't however plot the cdf over infinite range 
+%     %this value is the value at the end of the STATISTICAL MODEL of the cdf
+%     %not the data!!
+%     xvals_invCDF_mle_wbl(end)=Inf; 
+%     xvals_invCDF_mom_wbl(end)=Inf;
+% 
+%     
+%     %count how many x values are in these intervals for the actual data 
+%     fi_mle_wbl= histc(data,xvals_invCDF_mle_wbl);
+%     fi_mom_wbl= histc(data,xvals_invCDF_mom_wbl);
+% 
+%     fi_mle_wbl(end)=[];
+%     fi_mom_wbl(end)=[];
+%   
+%     %Using Formula in (Chan):
+%     global modChiSqr_wbl_mle
+%     global modChiSqr_wbl_mom
+%     modChiSqr_wbl_mle= sum((fi_mle_wbl-(PFA)*N/K).^2/((PFA)*N/K));
+%     modChiSqr_wbl_mom= sum((fi_mom_wbl-(PFA)*N/K).^2/((PFA)*N/K));
 end 
-function [modChiSqr_watts, modChiSqr_mom, modChiSqr_r]=modChiSqr_k(K,PFA,data,shape_watts,shape_mom,shape_r,scale_watts,scale_mom,scale_r)
+function [modChiSqr_k_watts, modChiSqr_k_mom, modChiSqr_k_r]=modChiSqr_k(K,PFA,data,shape_watts_k,shape_mom_k,shape_r_k,scale_watts_k,scale_mom_k,scale_r_k)
     % K :       No. of even intervals to preak up region <PFA. 
     % PFA:      The amplitude region where Pfa <= (in Chan PFA = 0.1).
     % data:     The measured data the fit is being compared to
 
-    
     N=length(data);       %get length of sea clutter data
-    CDF_start=      1-PFA;   %Start at this probability in the CDF function (translates to PFA in PDF) 
+    CDF_start=      1-PFA;   %Start at this probability in the CDF function (translates to PFA in PDF)
     stepSize =      PFA/K;
-    probability_intervals=  CDF_start:stepSize:1; 
-    %intervals_CDF=  0:0.1:1; 
-    x = 0:0.0001:data(N); %Get cdf of k distribution over the desired range
-    k_cdf_watts= 1 - ((2/gamma(shape_watts)).*((scale_watts.*x./2).^shape_watts).*besselk(shape_watts,scale_watts.*x)); %You dont need to change this
-    k_cdf_mom= 1 - ((2/gamma(shape_mom)).*((scale_mom.*x./2).^shape_mom).*besselk(shape_mom,scale_mom.*x)); %You dont need to change this
-    k_cdf_r= 1 - ((2/gamma(shape_r)).*((scale_r.*x./2).^shape_r).*besselk(shape_r,scale_r.*x)); %You dont need to change this
+    probability_intervals=  CDF_start:stepSize:1;
+    %intervals_CDF=  0:0.1:1;
+    x1 = 0:1e-4:data(N); %Get cdf of k distribution over the desired range
+    k_cdf_watts= 1 - ((2/gamma(shape_watts_k))*((scale_watts_k.*x1./2).^shape_watts_k).*besselk(shape_watts_k,scale_watts_k.*x1)); %You dont need to change this
+    k_cdf_mom= 1 - ((2/gamma(shape_mom_k))*((scale_mom_k.*x1./2).^shape_mom_k).*besselk(shape_mom_k,scale_mom_k.*x1)); %You dont need to change this
+    k_cdf_r= 1 - ((2/gamma(shape_r_k))*((scale_r_k.*x1./2).^shape_r_k).*besselk(shape_r_k,scale_r_k.*x1)); %You dont need to change this
     
     for i=1:length(probability_intervals)
         % find the index (b) of the value in the cdf that is associated
         % with the probabilites stipulated by K --> then find the x value
         % associated with this index
         [a,b]=min(abs(k_cdf_watts-probability_intervals(i)));
-        xvals_invCDF_watts(i)=x(b);
+        xvals_invCDF_watts(i)=x1(b);
         
         [a,b]=min(abs(k_cdf_mom-probability_intervals(i)));
-        xvals_invCDF_mom(i)=x(b);
+        xvals_invCDF_mom(i)=x1(b);
         
         [a,b]=min(abs(k_cdf_r-probability_intervals(i)));
-        xvals_invCDF_r(i)=x(b);
+        xvals_invCDF_r(i)=x1(b);
     end
-    % Since the x value associated with 100% of the cdf tends to infinity --> we couldn't however plot the cdf over infinite range 
+    % Since the x value associated with 100% of the cdf tends to infinity --> we couldn't however plot the cdf over infinite range
     %this value is the value at the end of the STATISTICAL MODEL of the cdf
     %not the data!!
-    xvals_invCDF_watts(end)=Inf; 
+    xvals_invCDF_watts(end)=Inf;
     xvals_invCDF_mom(end)=Inf;
     xvals_invCDF_r(end)=Inf;
     
-    %count how many x values are in these intervals for the actual data 
+    %count how many x values are in these intervals for the actual data
     fi_watts= histc(data,xvals_invCDF_watts);
     fi_mom= histc(data,xvals_invCDF_mom);
     fi_r= histc(data,xvals_invCDF_r);
@@ -913,35 +907,38 @@ function [modChiSqr_watts, modChiSqr_mom, modChiSqr_r]=modChiSqr_k(K,PFA,data,sh
     fi_watts(end)=[];
     fi_mom(end)=[];
     fi_r(end)=[];
-
-    %Using Formula in (Chan):
-    modChiSqr_watts= sum((fi_watts-(PFA)*N/K).^2/((PFA)*N/K));
-    modChiSqr_mom= sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K));
-    modChiSqr_r= sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K));
+    
+    %Using Formula in (Chan 2006):
+    modChiSqr_k_watts= round(sum((fi_watts-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_k_mom= round(sum((fi_mom-(PFA)*N/K).^2/((PFA)*N/K)));
+    modChiSqr_k_r= round(sum((fi_r-(PFA)*N/K).^2/((PFA)*N/K)));
     
 end 
 %% Reflectivity 
-function [mean_reflectivity] = getReflectivity(Cdata)
-    global R
-    global azimuth
-    global GrazingAngle 
-    global elevation
+function [mean_reflectivity] = getReflectivity(cycleThrough)
+% gets reflectivity per range bin and averages this over the dataset 
     global A
-    fprintf('Measured Reflectivity \n');
-    for RangeBin = 1:1:48
-        DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
-        DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
-        data = abs(DataMeanSubtracted); % amplitude of the complex clutter
-%         A = pi*R^2*tan((-elevation*(pi/180))/2)*tan((azimuth*(pi/180))/2)*csc(GrazingAngle*(pi/180));
-       
-        %A = 15*((pi/180)*azimuth*R);
-        sigma = mean((abs(data)).^2);
-        sigma_o_measured(RangeBin) = 10*log10(sigma/A);
-        fprintf('Range bin: %i  Reflectivity: %f \n',RangeBin, sigma_o_measured(RangeBin));
-        %R = R + 15;
+    global Cdata
+    global R1
+    global R2
+    if cycleThrough == 1 
+        fprintf('Measured Reflectivity \n');
+        for RangeBin = 1:1:size(Cdata,2) %for every RB in dataset 
+            DataOneBin = Cdata(:,RangeBin); %Extract the data from the specified bin only 
+            DataMeanSubtracted = DataOneBin - mean(DataOneBin);  %Normalise about mean ***CHECK*** 
+            data = abs(DataMeanSubtracted); % amplitude of the complex clutter
+            sigma = mean((abs(data)).^2)/A;
+            sigma_o_measured(RangeBin) = 10*log10(sigma);
+            %fprintf('Range bin: %i  Reflectivity: %f \n',RangeBin, sigma_o_measured(RangeBin));
+        end
+        %fprintf('Average Reflectivity in Dataset: %f \n', round(mean(sigma_o_measured)));
+        mean_reflectivity = round(mean(sigma_o_measured));
+        
+    elseif cycleThrough == 0
+      data = concatRangeBins(R1,R2);
+      sigma = mean((abs(data)).^2)/A;
+      mean_reflectivity = 10*log10(sigma);
     end
-    fprintf('Average Reflectivity in Dataset: %f \n', round(mean(sigma_o_measured)));
-    mean_reflectivity = round(mean(sigma_o_measured));
 end
 %GIT Model
 function [mean_GIT] = GIT()
@@ -1088,25 +1085,41 @@ elseif (swh>=6.0957) && (swh<12.1914)
     SS = 7;
 end
 end
-function [] = reflectivityCompare(Cdata)
+function [] = reflectivityCompare(cycleThrough)
     global SS 
+    global R1
+    global R2
     global GrazingAngle
     gr = GrazingAngle;
-    mean_reflectivity = getReflectivity(Cdata);
+    mean_reflectivity = getReflectivity(cycleThrough);
     SS  = Douglas();
     mean_GIT = GIT();
     mean_HYB = HYB();
     mean_TSC = TSC();
-    fprintf('Reflecitvity over the dataset:\n Mean Measured Reflectivity: %f \nGIT Model: %f\nHYB Model: %f\nTSC Model: %f\n',mean_reflectivity,mean_GIT,mean_HYB,mean_TSC);
-     [m,index] = min(abs([mean_GIT, mean_HYB, mean_TSC] - mean_reflectivity));
-     if index == 1
-         best = 'GIT';
-     elseif index == 2
-         best = 'HYB';
-     elseif index ==3
-         best = 'TSC';
-     end
-    fprintf('Best Model: %s\n',best);
+    if cycleThrough == 1 
+        fprintf('\nReflecitvity over the dataset:\nMean Measured Reflectivity: %i \nGIT Model: %i\nHYB Model: %i\nTSC Model: %i\n',round(mean_reflectivity),round(mean_GIT),round(mean_HYB),round(mean_TSC));
+        [m,index] = min(abs([mean_GIT, mean_HYB, mean_TSC] - mean_reflectivity));
+        if index == 1
+            best = 'GIT';
+        elseif index == 2
+            best = 'HYB';
+        elseif index ==3
+            best = 'TSC';
+        end
+        fprintf('Best Model: %s\n',best);
+    elseif cycleThrough == 0 
+        fprintf('\nReflecitvity over the range bins %i-%i:\nMeasured Reflectivity: %i \nGIT Model: %i\nHYB Model: %i\nTSC Model: %i\n',R1,R2,round(mean_reflectivity),round(mean_GIT),round(mean_HYB),round(mean_TSC));
+        [m,index] = min(abs([mean_GIT, mean_HYB, mean_TSC] - mean_reflectivity));
+        if index == 1
+            best = 'GIT';
+        elseif index == 2
+            best = 'HYB';
+        elseif index ==3
+            best = 'TSC';
+        end
+        fprintf('Best Model: %s\n',best);
+        
+    end
 end
 %% Miscellaneous Functions
 function y=rag(x)
@@ -1121,20 +1134,4 @@ function y=rag(x)
                 p = ma/mg;
                 Be = spline(rho_n ,beta ,p ); % use twice spline interpolation
                 y = spline(B ,nu ,Be);
-end
-function [p_k,x] = kpdf(shape,scale)
-%x values to span PDF over
-    %x = linspace(0,10,1);    
-     x = 0:0.01:5;
-% Define shape and scale parameters
-    c = scale; 
-    v = shape;
-% Define PDF distribution 
-    %p_k = (sqrt(2.*v./c)./((2.^(v-1))*gamma(v))).*((sqrt((2.*v)./c).*x).^v).*besselk(v-1,sqrt((2.*v)./c).*x)
-    %p_k = (2*c/gamma(v)).*(c.*x./2).^(v).*besselk(v-1,x);
-    %p_k = (2*c/gamma(v)).*((0.5*c.*x).^v).*besselk(v-1,c.*x);
-    p_k = (2/(c*gamma(v+1))).*((0.5*x./c).^v).*besselk(v,x./c);
-%for x = 0:0.1:10
-%         p_k(x) = (2*c/gamma(v))*((c*x/2)^v)*bessely(v-1,c*x)
-%     end
 end
