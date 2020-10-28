@@ -4,6 +4,8 @@ close all;
 for i=1:1
 global Cdata
 global h 
+global arr_gr
+global arr_A
 global path
 global RBin
 global R1 
@@ -43,7 +45,7 @@ global modChiSqr_k_mom
 global modChiSqr_k_r
 end
 %% Load Dataset
-DataSetName = '08_019_CS';
+DataSetName = '11_011_CS';
 load(DataSetName);
 DataSet = DataSetName(7:9);
 %% Path for Figures
@@ -157,7 +159,7 @@ for setParameters = 1:1
         ant_az = 285;
       
       theta_w = 274.8-ant_az;
-%       theta_w = ant_az-274.8;
+       theta_w = ant_az-274.8;
         h = 308.0411; 
     elseif DataSetName == '08_020_CS'
         pol = 'VV';
@@ -199,7 +201,7 @@ for setParameters = 1:1
         
         ant_az = 240;
         theta_w = 12.36 -ant_az;
-        h = 294;
+        h = 308.0411;
 
     elseif DataSetName == '11_008_CS'
         pol = 'VV';
@@ -213,7 +215,7 @@ for setParameters = 1:1
         
         ant_az = 262.5;
         theta_w = 12.36 -ant_az;
-        h = 294; 
+        h = 308.041; 
      elseif DataSetName == '11_009_CS'
         pol = 'VV';
         f = 8.8;  
@@ -226,7 +228,7 @@ for setParameters = 1:1
         
         ant_az = 285; 
         theta_w = ant_az - 12.36;
-        h = 294;
+        h = 308.0411;
      elseif DataSetName == '11_010_CS'
         pol = 'VV';
         f = 8.8;  
@@ -239,7 +241,7 @@ for setParameters = 1:1
 
         ant_az = 307.5;
         theta_w = ant_az-12.36 ;
-        h = 294; 
+        h = 308.041; 
     elseif DataSetName == '11_011_CS'
         pol = 'VV';
         f = 8.8;  
@@ -252,7 +254,7 @@ for setParameters = 1:1
   
         ant_az = 330;
         theta_w = ant_az-12.36;
-        h = 294; 
+        h = 308.0411; 
     end 
     theta1 = acos((R.^2 + Re^2 - (h+Re).^2)./(2*Re*R)) - (pi/2); %radians
     theta2 = acos((Range_ext.^2 + Re^2 - (h+Re).^2)./(2*Re*Range_ext)) - (pi/2);
@@ -274,9 +276,9 @@ RB = 1;
 % oneRangeBin(RB)
 %loopRangeBins(R1,R2);
 %loopDataset();
-
-for i = 1:20
-    R2 =i*5;
+global intval
+for intval = 1:20
+    R2 =intval*5;
     R1 = R2 -4;
 loopRangeBins(R1,R2);
 end
@@ -343,6 +345,7 @@ function oneRangeBin(RB)
 end
 function loopRangeBins(R1,R2)
     global RB
+    global intval
     RB = R1;
     for i=1:1
         global x 
@@ -401,15 +404,17 @@ function loopRangeBins(R1,R2)
     theta1 = acos((Range1.^2 + Re^2 - (h+Re).^2)./(2*Re*Range1)) - (pi/2);
     theta2 = acos((Range2.^2 + Re^2 - (h+Re).^2)./(2*Re*Range2)) - (pi/2);
     GrazingAngle =(theta1 + theta2)/2;
- 
     global A 
     global beamwidth
+    global arr_gr
+    global arr_A
     A1 = 15*Range1*beamwidth*sec(theta1); %average illuminated area
     A2 = 15*Range2*beamwidth*sec(theta2); %average illuminated area
     A = (A1+A2)/2;
+    
     range = R + R1*15 + (R2-R1)*15;
-    [mean_reflectivity, mean_GIT, mean_HYB, mean_TSC,best] = reflectivityCompare(0);
-    csv_append = [R1 R2 range sigma_mle_rayl sigma_mom_rayl sigma_mle_logn sigma_mom_logn mu_mle_logn mu_mom_logn shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl shape_watts_k,shape_mom_k,scale_watts_k,scale_mom_k, modChiSqr_rayl_mle, modChiSqr_rayl_mom, modChiSqr_logn_mle, modChiSqr_logn_mom , modChiSqr_wbl_mle, modChiSqr_wbl_mom , modChiSqr_k_watts, modChiSqr_k_mom,mean_reflectivity, mean_GIT, mean_HYB, mean_TSC];
+    [mean_reflectivity, mean_GIT, mean_HYB, mean_TSC] = reflectivityCompare(0);
+    csv_append = [R1 R2 range sigma_mle_rayl sigma_mom_rayl sigma_mle_logn sigma_mom_logn mu_mle_logn mu_mom_logn shape_mle_wbl,shape_mom_wbl,scale_mle_wbl,scale_mom_wbl shape_watts_k,shape_mom_k,scale_watts_k,scale_mom_k, modChiSqr_rayl_mle, modChiSqr_rayl_mom, modChiSqr_logn_mle, modChiSqr_logn_mom , modChiSqr_wbl_mle, modChiSqr_wbl_mom , modChiSqr_k_watts, modChiSqr_k_mom,mean_reflectivity, mean_GIT, mean_HYB, mean_TSC, rad2deg(GrazingAngle), A];
     dlmwrite('Datasets.csv',csv_append,'delimiter',',','-append');
 end
 function loopDataset()
@@ -1063,6 +1068,7 @@ function [mean_reflectivity, mean_GIT, mean_HYB, mean_TSC,best] = reflectivityCo
     global RB
     global GrazingAngle
     gr = GrazingAngle;
+    
     mean_reflectivity = getReflectivity(cycleThrough);
     SS  = Douglas();
     mean_GIT = GIT();
@@ -1152,7 +1158,7 @@ function [mean_GIT] = GIT()
 %     global pol 
     gr = GrazingAngle;
  
-    theta_w = deg2rad(theta_w);
+    tw = deg2rad(theta_w);
 
     %get average wave heigh hav from swh
     hav = 1.6*swh;
@@ -1162,7 +1168,7 @@ function [mean_GIT] = GIT()
     q = 1.1/((lambda + 0.015)^(0.4));
 
     Ga = (a^4)/(1+a^4);
-    Gu = exp(0.2*cos(theta_w)*(1-2.8*gr)*(lambda + 0.015)^(-0.4));
+    Gu = exp(0.2*cos(tw)*(1-2.8*gr)*(lambda + 0.015)^(-0.4));
     Gw = ((1.94*U)/(1+U/15.4))^q;
 
     HH = 10*log10(3.9*10^(-6)*lambda*(gr^0.4)*Ga*Gu*Gw);
@@ -1223,7 +1229,6 @@ function [mean_TSC] = TSC()
     global lambda
     global theta_w 
     global GrazingAngle
-    global f
     global pol 
     global SS
     gr = GrazingAngle;
